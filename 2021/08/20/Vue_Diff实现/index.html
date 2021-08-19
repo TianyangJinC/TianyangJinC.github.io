@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vue_Diff实现 | 鲜衣怒马少年时，一朝看尽长安花</title><meta name="author" content="Tianyang Jin"><meta name="copyright" content="Tianyang Jin"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="何为Diff算法？简单来说，就是将一个树形结构转换为另一个树形结构所需要进行的最小操作。   index.js 在第一次patch中，实现 Dom节点 与 虚拟节点 的替换。在第二次patch中，实现 虚拟节点 与 虚拟节点 的替换。  12345678910111213141516171819202122232425262728293031323334353637&#x2F;&#x2F; index.jsimpo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue_Diff实现">
+<meta property="og:url" content="http://tianyangjinc.github.io/2021/08/20/Vue_Diff%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="鲜衣怒马少年时，一朝看尽长安花">
+<meta property="og:description" content="何为Diff算法？简单来说，就是将一个树形结构转换为另一个树形结构所需要进行的最小操作。   index.js 在第一次patch中，实现 Dom节点 与 虚拟节点 的替换。在第二次patch中，实现 虚拟节点 与 虚拟节点 的替换。  12345678910111213141516171819202122232425262728293031323334353637&#x2F;&#x2F; index.jsimpo">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2021-08-19T16:08:00.000Z">
+<meta property="article:modified_time" content="2021-08-19T16:08:52.145Z">
+<meta property="article:author" content="Tianyang Jin">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://tianyangjinc.github.io/2021/08/20/Vue_Diff%E5%AE%9E%E7%8E%B0/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"top-right"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Vue_Diff实现',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: undefined,
+  isToc: true,
+  postUpdate: '2021-08-20 00:08:52'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://z3.ax1x.com/2021/08/19/fqY8k4.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a></div></div></div><hr/></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">鲜衣怒马少年时，一朝看尽长安花</a></span><div id="menus"><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Vue_Diff实现</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-08-19T16:08:00.000Z" title="发表于 2021-08-20 00:08:00">2021-08-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2021-08-19T16:08:52.145Z" title="更新于 2021-08-20 00:08:52">2021-08-20</time></span></div><div class="meta-secondline"></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><blockquote>
+<p>何为<code>Diff</code>算法？<br>简单来说，就是<strong>将一个树形结构转换为另一个树形结构所需要进行的最小操作。</strong></p>
+</blockquote>
+<hr>
+<h3 id="index-js"><a href="#index-js" class="headerlink" title="index.js"></a><code>index.js</code></h3><blockquote>
+<p>在第一次<code>patch</code>中，实现 <strong>Dom节点</strong> 与 <strong>虚拟节点</strong> 的替换。<br>在第二次<code>patch</code>中，实现 <strong>虚拟节点</strong> 与 <strong>虚拟节点</strong> 的替换。</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// index.js</span></span><br><span class="line"><span class="keyword">import</span> h <span class="keyword">from</span> <span class="string">&quot;./h&quot;</span></span><br><span class="line"><span class="keyword">import</span> patch <span class="keyword">from</span> <span class="string">&quot;./patch&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> vNode = h(<span class="string">&#x27;div&#x27;</span>, &#123;</span><br><span class="line">  <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;div&quot;</span> &#125;,</span><br><span class="line">  <span class="attr">children</span>: [</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;A&quot;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;A&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;B&quot;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;B&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;C&quot;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;C&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;D&quot;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;D&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;E&quot;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;E&#x27;</span> &#125;)</span><br><span class="line">  ]</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> container = <span class="built_in">document</span>.getElementById(<span class="string">&#x27;container&#x27;</span>);</span><br><span class="line"></span><br><span class="line">patch(container, vNode);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> new_vNode = h(<span class="string">&#x27;div&#x27;</span>, &#123;</span><br><span class="line">  <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&quot;div&quot;</span> &#125;,</span><br><span class="line">  <span class="attr">children</span>: [</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;Q&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;Q&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;T&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;T&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;A&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;A&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;B&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;B&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;Z&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;Z&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;C&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;C&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;D&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;D&#x27;</span> &#125;),</span><br><span class="line">    h(<span class="string">&#x27;li&#x27;</span>, &#123; <span class="attr">data</span>: &#123; <span class="attr">key</span>: <span class="string">&#x27;E&#x27;</span> &#125;, <span class="attr">context</span>: <span class="string">&#x27;E&#x27;</span> &#125;)</span><br><span class="line">  ]</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">const</span> btn = <span class="built_in">document</span>.getElementById(<span class="string">&#x27;btn&#x27;</span>);</span><br><span class="line"></span><br><span class="line">btn.onclick = <span class="function">() =&gt;</span> &#123;</span><br><span class="line">  patch(vNode, new_vNode)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="何为虚拟节点？"><a href="#何为虚拟节点？" class="headerlink" title="何为虚拟节点？"></a>何为虚拟节点？</h3><blockquote>
+<p>简而言之，虚拟节点即为如下形式：<br><code>&#123; sel: &quot;div&quot;, data: &#123; &#125;, elm: **DOMNODE**, key: &quot;div&quot;, children: [], text: &quot;&quot; &#125;</code><br><code>sel</code>为 Dom 节点的<code>tag</code>，<code>data</code>为 Dom 节点的<code>props</code>，<code>elm</code>为 Dom 节点的<code>Dom_Node</code>，<code>key</code>为 Dom 节点的<code>唯一标识符</code>，<code>children</code>为 Dom 节点的<code>children_Node</code>，<code>text</code>为 Dom 节点的<code>内容</code>。</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// vNode.js</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">vNode</span>(<span class="params">sel, data, children, text, elm</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> key = data.key</span><br><span class="line">  <span class="keyword">let</span> res = &#123; sel, data, children, text, elm, key &#125;</span><br><span class="line">  <span class="built_in">console</span>.log(res);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> &#123; sel, data, children, text, elm, key &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="生成虚拟节点"><a href="#生成虚拟节点" class="headerlink" title="生成虚拟节点"></a>生成虚拟节点</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// h.js</span></span><br><span class="line"><span class="keyword">import</span> vNode <span class="keyword">from</span> <span class="string">&quot;./vNode&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">h</span>(<span class="params">sel, &#123; data = &#123;&#125;, children, context &#125;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> context == <span class="string">&#x27;string&#x27;</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> vNode(sel, data, <span class="literal">undefined</span>, context, <span class="literal">undefined</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> context == <span class="string">&#x27;object&#x27;</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> vNode(sel, data, context, <span class="literal">undefined</span>, <span class="literal">undefined</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (children) &#123;</span><br><span class="line">    <span class="keyword">let</span> nodes = []</span><br><span class="line">    children.forEach(<span class="function"><span class="params">child</span> =&gt;</span> &#123;</span><br><span class="line">      nodes.push(child)</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> vNode(sel, data, nodes, <span class="literal">undefined</span>, <span class="literal">undefined</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="patch-js函数"><a href="#patch-js函数" class="headerlink" title="patch.js函数"></a><code>patch.js</code>函数</h3><blockquote>
+<p>在<code>patch.js</code>函数中，主要检验新老节点是否为同一虚拟节点，并进行下面的操作。</p>
+</blockquote>
+<blockquote>
+<p>创建 Dom 元素</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// createElement.js</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">createElement</span>(<span class="params">vNode</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> originNode = <span class="built_in">document</span>.createElement(vNode.sel)</span><br><span class="line"></span><br><span class="line">  vNode.children</span><br><span class="line">    ? (<span class="function">() =&gt;</span> &#123;</span><br><span class="line">      vNode.children.forEach(<span class="function"><span class="params">child</span> =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> node = createElement(child)</span><br><span class="line">        originNode.appendChild(node)</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;)()</span><br><span class="line">    : (<span class="function">() =&gt;</span> &#123;</span><br><span class="line">      originNode.innerHTML = vNode.text</span><br><span class="line">    &#125;)()</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 注意返回的是 vNode.elm, 否则会出现 newNode 没有 elm 的情况, 导致 new_vNode 替换 vNode 时找不到 vNode 的 elm 属性</span></span><br><span class="line">  <span class="keyword">return</span> vNode.elm = originNode</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="patchVnode-js"><a href="#patchVnode-js" class="headerlink" title="patchVnode.js"></a><code>patchVnode.js</code></h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// patchVnode.js</span></span><br><span class="line"><span class="keyword">import</span> createElement <span class="keyword">from</span> <span class="string">&quot;./createElement&quot;</span></span><br><span class="line"><span class="keyword">import</span> updateChildren <span class="keyword">from</span> <span class="string">&quot;./updateChildren&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">patchVnode</span>(<span class="params">oldNode, newNode</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (oldNode == newNode) <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (newNode.text &amp;&amp; (newNode.children == <span class="literal">undefined</span> || newNode.children.length == <span class="number">0</span>)) &#123;</span><br><span class="line">    <span class="comment">// newNode has [text] prop</span></span><br><span class="line">    newNode.text == oldNode.text ? <span class="literal">null</span> : oldNode.elm.innerText = newNode.text</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// newNode has [children] prop</span></span><br><span class="line">    <span class="keyword">if</span> (oldNode.children &amp;&amp; oldNode.children.length !== <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">// oldNode has [children] prop</span></span><br><span class="line"></span><br><span class="line">      <span class="comment">// this is just the diff</span></span><br><span class="line">      updateChildren(oldNode.elm, oldNode.children, newNode.children)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// oldNode has [text] prop</span></span><br><span class="line">      oldNode.elm.innerText = <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line">      newNode.children.forEach(<span class="function"><span class="params">child</span> =&gt;</span> &#123;</span><br><span class="line">        oldNode.elm.appendChild(createElement(child))</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="Diff算法核心：newNode-children和oldNode-children进行更新"><a href="#Diff算法核心：newNode-children和oldNode-children进行更新" class="headerlink" title="Diff算法核心：newNode.children和oldNode.children进行更新"></a><code>Diff</code>算法核心：<code>newNode.children</code>和<code>oldNode.children</code>进行更新</h3><blockquote>
+<p><code>Diff</code>算法的创始人使用了一种巧妙的思想：四指针，并按照程序员平时的思维习惯，提出了四种情况。</p>
+<ul>
+<li><code>oldStartNode == newStartNode</code>：直接进行替换；</li>
+<li><code>oldEndNode == newEndNode</code>：直接进行替换；</li>
+<li><code>newEndNode == oldStartNode</code>：移动<code>oldStartNode</code>到<code>oldEndNode</code>之后；</li>
+<li><code>newStartNode == oldEndNode</code>：移动<code>oldEndNode</code>到<code>oldStartNode</code>之前。</li>
+</ul>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// updateChildren.js</span></span><br><span class="line"><span class="comment">// 部分代码</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">let</span> newStartIdx = <span class="number">0</span></span><br><span class="line">  <span class="keyword">let</span> newStartNode = newCh[newStartIdx]</span><br><span class="line"></span><br><span class="line">  <span class="keyword">let</span> newEndIdx = newCh.length - <span class="number">1</span></span><br><span class="line">  <span class="keyword">let</span> newEndNode = newCh[newEndIdx]</span><br><span class="line"></span><br><span class="line">  <span class="keyword">let</span> oldStartIdx = <span class="number">0</span></span><br><span class="line">  <span class="keyword">let</span> oldStartNode = oldCh[oldStartIdx]</span><br><span class="line"></span><br><span class="line">  <span class="keyword">let</span> oldEndIdx = oldCh.length - <span class="number">1</span></span><br><span class="line">  <span class="keyword">let</span> oldEndNode = oldCh[oldEndIdx]</span><br><span class="line"></span><br><span class="line">  <span class="keyword">let</span> keyMap = <span class="literal">null</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (newStartIdx &lt;= newEndIdx &amp;&amp; oldStartIdx &lt;= oldEndIdx) &#123;</span><br><span class="line">    <span class="keyword">if</span> (oldStartNode == <span class="literal">null</span> || oldCh[oldStartIdx] == <span class="literal">undefined</span>) &#123;</span><br><span class="line">      oldStartNode = oldCh[++oldStartIdx];</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (oldEndNode == <span class="literal">null</span> || oldCh[oldEndIdx] == <span class="literal">undefined</span>) &#123;</span><br><span class="line">      oldEndNode = oldCh[--oldEndIdx];</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (newStartNode == <span class="literal">null</span> || newCh[newStartIdx] == <span class="literal">undefined</span>) &#123;</span><br><span class="line">      newStartNode = newCh[++newStartIdx];</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (newEndNode == <span class="literal">null</span> || newCh[newEndIdx] == <span class="literal">undefined</span>) &#123;</span><br><span class="line">      newEndNode = newCh[--newEndIdx];</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (checkSameNode(newStartNode, oldStartNode)) &#123;</span><br><span class="line">      <span class="comment">// 新前 == 旧前, 直接用 newNode 替换 oldNode</span></span><br><span class="line">      patchVnode(oldStartNode, newStartNode)</span><br><span class="line">      newStartNode = newCh[++newStartIdx]</span><br><span class="line">      oldStartNode = oldCh[++oldStartIdx]</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (checkSameNode(newEndNode, oldEndNode)) &#123;</span><br><span class="line">      <span class="comment">// 新后 == 旧后, 直接用 newNode 替换 oldNode</span></span><br><span class="line">      patchVnode(oldEndNode, newEndNode)</span><br><span class="line">      newEndNode = newCh[--newEndIdx]</span><br><span class="line">      oldEndNode = oldCh[--oldEndIdx]</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (checkSameNode(newEndNode, oldStartNode)) &#123;</span><br><span class="line">      <span class="comment">// 新后 == 旧前, 移动 oldStartNode 到 oldEndNode 之后</span></span><br><span class="line">      patchVnode(oldStartNode, newEndNode)</span><br><span class="line"></span><br><span class="line">      parentNode.insertBefore(oldStartNode.elm, oldEndNode.elm.nextSibling)</span><br><span class="line">      newEndNode = newCh[--newEndIdx]</span><br><span class="line">      oldStartNode = oldCh[++oldStartIdx]</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (checkSameNode(newStartNode, oldEndNode)) &#123;</span><br><span class="line">      <span class="comment">// 新前 == 旧后, 移动 oldEndNode 到 oldStartNode 之前</span></span><br><span class="line">      patchVnode(oldEndNode, newStartNode)</span><br><span class="line"></span><br><span class="line">      parent.insertBefore(oldEndNode.elm, oldStartNode.elm)</span><br><span class="line">      newStartNode = newCh[++newStartIdx]</span><br><span class="line">      oldEndNode = oldCh[--oldEndIdx]</span><br><span class="line">    &#125; </span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>如果四种情况都不符合，做以下操作。</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// updateChildren.js</span></span><br><span class="line"><span class="comment">// 部分代码</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!keyMap) &#123;</span><br><span class="line">        keyMap = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">let</span> i = oldStartIdx; i &lt; oldEndIdx; i++) &#123;</span><br><span class="line">          <span class="keyword">const</span> key = oldCh[i].key</span><br><span class="line">          <span class="keyword">if</span> (key !== <span class="literal">undefined</span>) &#123;</span><br><span class="line">            keyMap[key] = i</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 寻找当前这项 newStartIdx 在 keyMap 中的映射的位置序号</span></span><br><span class="line">      <span class="keyword">const</span> idxInOld = keyMap[newStartNode.key]</span><br><span class="line">      <span class="keyword">if</span> (idxInOld == <span class="literal">undefined</span>) &#123;</span><br><span class="line">        <span class="comment">// 表示当前项为全新项</span></span><br><span class="line">        parentNode.insertBefore(createElement(newStartNode), oldStartNode.elm)</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">const</span> elmToMove = oldCh[idxInOld]</span><br><span class="line">        patchVnode(elmToMove, newStartNode)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 代表其已经被处理完毕 </span></span><br><span class="line">        oldCh[idxInOld] = <span class="literal">undefined</span></span><br><span class="line">        parentNode.insertBefore(elmToMove.elm, oldStartNode.elm)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      newStartNode = newCh[++newStartIdx]</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>当不满足循环条件时，如果<code>newCh</code>或<code>oldCh</code>中还有其他的元素，做以下操作。</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// updateChildren.js</span></span><br><span class="line"><span class="comment">// 部分代码  </span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (newStartIdx &lt;= newEndIdx) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = newStartIdx; i &lt;= newEndIdx; i++) &#123;</span><br><span class="line">      parentNode.insertBefore(createElement(newCh[i]), oldCh[oldStartIdx].elm);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (oldStartIdx &lt;= oldEndIdx) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = oldStartIdx; i &lt;= oldEndIdx; i++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (oldCh[i]) &#123;</span><br><span class="line">        parentNode.removeChild(oldCh[i].elm);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>在上一章节的<code>diff_core</code>中，一百左右行的代码，就将<code>diff_core</code>算法的核心写完，算法实在是巧妙。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Tianyang Jin</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://tianyangjinc.github.io/2021/08/20/Vue_Diff%E5%AE%9E%E7%8E%B0/">http://tianyangjinc.github.io/2021/08/20/Vue_Diff%E5%AE%9E%E7%8E%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://TianyangJinC.github.io" target="_blank">鲜衣怒马少年时，一朝看尽长安花</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/08/20/Vue_Reactive%E5%AE%9E%E7%8E%B0/"><img class="prev-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Vue_Reactive实现</div></div></a></div><div class="next-post pull-right"><a href="/2021/08/20/Vue_Mustache%E5%AE%9E%E7%8E%B0/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Vue_Mustache实现</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#index-js"><span class="toc-text">index.js</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%95%E4%B8%BA%E8%99%9A%E6%8B%9F%E8%8A%82%E7%82%B9%EF%BC%9F"><span class="toc-text">何为虚拟节点？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E8%99%9A%E6%8B%9F%E8%8A%82%E7%82%B9"><span class="toc-text">生成虚拟节点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#patch-js%E5%87%BD%E6%95%B0"><span class="toc-text">patch.js函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#patchVnode-js"><span class="toc-text">patchVnode.js</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Diff%E7%AE%97%E6%B3%95%E6%A0%B8%E5%BF%83%EF%BC%9AnewNode-children%E5%92%8ColdNode-children%E8%BF%9B%E8%A1%8C%E6%9B%B4%E6%96%B0"><span class="toc-text">Diff算法核心：newNode.children和oldNode.children进行更新</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 By Tianyang Jin</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script>function panguFn () {
+  if (typeof pangu === 'object') pangu.autoSpacingPage()
+  else {
+    getScript('https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js')
+      .then(() => {
+        pangu.autoSpacingPage()
+      })
+  }
+}
+
+function panguInit () {
+  if (false){
+    GLOBAL_CONFIG_SITE.isPost && panguFn()
+  } else {
+    panguFn()
+  }
+}
+
+document.addEventListener('DOMContentLoaded', panguInit)</script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="255,255,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script></div></body></html>
